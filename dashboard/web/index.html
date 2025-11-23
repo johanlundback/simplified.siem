@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cyber SIEM Dashboard</title>
+
+    <!-- chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: #0b1118;
+            color: #d5d5d5;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 20px 0 10px;
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: #00eaff;
+            font-weight: bold;
+        }
+
+        h3 {
+            text-align: center;
+            padding: 5px 0 5px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #00eaff;
+            font-weight: bold;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            padding: 20px;
+            width: 95%;
+            margin: auto;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        /* --- korten --- */
+        .card {
+            background: #111821;
+            padding: 18px;
+            border-radius: 8px;
+            border: 1px solid #1f2a36;
+            box-shadow: 0 0 8px rgba(0, 238, 255, 0.05);
+        }
+
+        /* --- top stats --- */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+        }
+
+        .stat-box {
+            flex: 1;
+            margin: 0 10px;
+            background: #0f141c;
+            border-radius: 6px;
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid #1f2a36;
+        }
+
+        .stat-title {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            margin-top: 4px;
+            font-weight: bold;
+            color: #00eaff;
+        }
+
+        #refreshBtn {
+            display: block;
+            margin: 12px auto 0;
+            padding: 8px 20px;
+            font-size: 15px;
+            background: #00eaff;
+            border: none;
+            color: black;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* --- lista över events --- */
+        #events {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .event {
+            background: #0f141c;
+            padding: 14px;
+            margin-bottom: 12px;
+            border-left: 3px solid #00eaff;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .timestamp { color: #9ba4ad; font-size: 12px; }
+        .message { font-size: 15px; margin-top: 4px; font-weight: bold; }
+
+        /* --- riskfärger --- */
+        .risk-high {
+            color: #ff4d4d;
+            font-weight: bold;
+        }
+
+        .risk-medium {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+
+        .risk-low {
+            color: #00ff88;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Cyber SIEM Dashboard</h1>
+<h3>By: Johan Lundbäck</h3>
+
+<!-- stats -->
+<div class="grid-container">
+
+    <div class="card full-width">
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-title">Total Incidents</div>
+                <div id="totalIncidents" class="stat-value">0</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-title">High-Risk Incidents</div>
+                <div id="highRisk" class="stat-value">0</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-title">Most Attacked IP</div>
+                <div id="topIP" class="stat-value">-</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-title">Last Event</div>
+                <div id="lastEvent" class="stat-value">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- timeline -->
+    <div class="card">
+        <h3 style="margin-top:0; color:#00eaff;">Attack Timeline</h3>
+        <canvas id="attackChart" height="200"></canvas>
+    </div>
+
+    <!-- event list -->
+    <div class="card">
+        <h3 style="margin-top:0; color:#00eaff;">Recent Incidents</h3>
+        <div id="events"></div>
+    </div>
+
+</div>
+
+<!-- javascriptlogik -->
+<script>
+async function loadEvents() {
+    const res = await fetch("http://127.0.0.1:8000/events/latest");
+    const data = await res.json();
+
+    const eventsDiv = document.getElementById("events");
+    eventsDiv.innerHTML = "";
+
+    let ipCount = {};
+
+    data.forEach(row => {
+        const [id, timestamp, message, risk] = row;
+
+        let riskClass = "";
+        if (risk === "high") riskClass = "risk-high";
+        else if (risk === "medium") riskClass = "risk-medium";
+        else riskClass = "risk-low";
+
+        let item = document.createElement("div");
+        item.className = "event";
+        item.innerHTML = `
+            <div class="timestamp">${timestamp}</div>
+            <div class="message">${message}</div>
+            <div class="risk ${riskClass}">Risk Level: ${risk}</div>
+        `;
+
+        eventsDiv.appendChild(item);
+
+        let ip = message.split(" ").pop();
+        ipCount[ip] = (ipCount[ip] || 0) + 1;
+    });
+
+    document.getElementById("totalIncidents").innerText = data.length;
+    document.getElementById("highRisk").innerText = data.filter(e => e[3] === "high").length;
+    document.getElementById("lastEvent").innerText = data.length ? data[0][1] : "-";
+
+    let topIP = Object.entries(ipCount).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById("topIP").innerText = topIP ? topIP[0] : "-";
+}
+
+let attackChart = null;
+
+async function loadTimeline() {
+    const res = await fetch("http://127.0.0.1:8000/stats/timeline");
+    const data = await res.json();
+
+    const labels = data.map(d => d.time);
+    const counts = data.map(d => d.count);
+
+    if (attackChart) attackChart.destroy();
+
+    const ctx = document.getElementById("attackChart").getContext("2d");
+    attackChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Incidents per minute",
+                data: counts,
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+
+setInterval(() => {
+    loadEvents();
+    loadTimeline();
+}, 3000);
+
+loadEvents();
+loadTimeline();
+</script>
+
+</body>
+</html>

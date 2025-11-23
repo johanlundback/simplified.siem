@@ -1,0 +1,85 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #0a0f1f;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #e0e6f6;
+}
+
+#container {
+    width: 90%;
+    margin: 40px auto;
+}
+
+.title {
+    text-align: center;
+    font-size: 40px;
+    color: #7df9ff;
+    text-shadow: 0 0 20px #00e5ff;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: #111726;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+    border: 1px solid #1f2b40;
+}
+
+.card h2 {
+    margin: 0 0 20px 0;
+    color: #00e5ff;
+    text-shadow: 0 0 12px #00e5ff;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    color: #e0e6f6;
+}
+
+thead tr {
+    background: #1d2333;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+tbody tr {
+    background: #141a29;
+    border-bottom: 1px solid #1f2b40;
+}
+
+tbody tr:hover {
+    background: #1f2b40;
+}
+
+.risk-high {
+    color: #ff4b4b;
+    font-weight: bold;
+    text-shadow: 0 0 12px #ff0000;
+}
+
+.risk-medium {
+    color: #ffc04b;
+    font-weight: bold;
+}
+
+.risk-low {
+    color: #6bff71;
+    font-weight: bold;
+}
+
+.neon-glow {
+    animation: glow 1.5s infinite alternate;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 8px #00e5ff; }
+    to { text-shadow: 0 0 20px #00e5ff; }
+}
